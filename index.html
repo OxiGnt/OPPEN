@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Sorpresa!</title>
+  <style>
+    :root{
+      --bg1:#0f172a; --bg2:#0b3b2e; --accent:#0f0;
+    }
+    html,body{height:100%;margin:0;font-family:system-ui,Segoe UI,Roboto,Arial;}
+    body{
+      background:linear-gradient(135deg,var(--bg1),var(--bg2));
+      color:#fff; display:flex; align-items:center; justify-content:center;
+      padding:20px; box-sizing:border-box; text-align:center;
+    }
+    .card{
+      width:800px; max-width:100%; background:rgba(0,0,0,0.45);
+      border-radius:14px; padding:20px; box-shadow:0 10px 30px rgba(0,0,0,0.6);
+      border: 2px solid rgba(15,255,15,0.06);
+      backdrop-filter: blur(6px);
+    }
+    h1{margin:6px 0 12px;color:var(--accent); text-shadow:0 0 8px rgba(0,255,0,0.15);}
+    p{margin:0 0 18px; opacity:0.9;}
+    .photo-wrap{
+      display:flex; align-items:center; justify-content:center; margin-bottom:18px;
+    }
+    img.prank{
+      width:420px; max-width:100%; border-radius:10px; border:4px solid rgba(255,255,255,0.06);
+      box-shadow:0 8px 30px rgba(0,0,0,0.6);
+      transition: transform .6s cubic-bezier(.22,.9,.32,1), filter .5s;
+      cursor:pointer;
+    }
+    .photo-caption{font-size:14px; color:#cfe; margin-top:8px;}
+    .controls{display:flex; gap:12px; justify-content:center; margin-top:12px;}
+    button{
+      background:var(--accent); color:#000; border:none; padding:10px 16px; border-radius:8px;
+      font-weight:700; cursor:pointer; box-shadow: 0 6px 20px rgba(0,255,0,0.08);
+    }
+    .secret{
+      margin-top:14px; color:#ffd; opacity:0.95;
+      font-size:18px; transform-origin:center;
+    }
+
+    /* scherzo: confetti */
+    .confetti {
+      pointer-events:none;
+      position:fixed; inset:0; z-index:9999;
+    }
+
+    /* small responsive */
+    @media (max-width:520px){
+      img.prank{width:100%}
+      .card{padding:14px}
+      h1{font-size:20px}
+    }
+  </style>
+</head>
+<body>
+  <div class="card" role="main">
+    <h1>Guarda questa foto incredibile!</h1>
+    <div class="photo-wrap">
+      <!-- Se vuoi usare immagine online, sostituisci src con l'URL (es. https://... ) -->
+      <img class="prank" id="prankImg" src="foto.jpg" alt="Foto incredibile">
+    </div>
+    <div class="photo-caption">Clicca sull'immagine per una sorpresa 🎁</div>
+
+    <div class="controls">
+      <button id="openBtn">Mostra a schermo intero</button>
+      <button id="hideBtn">Niente, chiudi</button>
+    </div>
+
+    <div class="secret" id="secretText" style="display:none;">
+      <strong>🫡!</strong> Scherzo!😄
+    </div>
+  </div>
+
+  <!-- contenitore per confetti -->
+  <canvas class="confetti" id="confettiCanvas" width="800" height="600" style="display:none;"></canvas>
+
+<script>
+  const img = document.getElementById('prankImg');
+  const openBtn = document.getElementById('openBtn');
+  const hideBtn = document.getElementById('hideBtn');
+  const secretText = document.getElementById('secretText');
+  const confettiCanvas = document.getElementById('confettiCanvas');
+  const ctx = confettiCanvas.getContext && confettiCanvas.getContext('2d');
+
+  // funzione per attivare lo "scherzo"
+  function triggerPrank(){
+    // effetto immagine
+    img.style.transform = 'rotate(6deg) scale(1.04)';
+    img.style.filter = 'saturate(1.2) contrast(1.05)';
+    secretText.style.display = 'block';
+
+    // mostra canvas confetti se disponibile
+    if(ctx){
+      confettiCanvas.style.display = 'block';
+      confettiCanvas.width = window.innerWidth;
+      confettiCanvas.height = window.innerHeight;
+      startConfetti();
+    }
+
+    // cambia testo bottone
+    openBtn.textContent = 'Divertente, chiudi';
+  }
+
+  img.addEventListener('click', triggerPrank);
+
+  openBtn.addEventListener('click', () => {
+    // piccolo effetto full screen simulato (non richiede API)
+    document.documentElement.requestFullscreen?.();
+    triggerPrank();
+  });
+
+  hideBtn.addEventListener('click', () => {
+    // ripristina aspetto
+    img.style.transform = '';
+    img.style.filter = '';
+    secretText.style.display = 'none';
+    confettiCanvas.style.display = 'none';
+    openBtn.textContent = 'Mostra a schermo intero';
+    stopConfetti();
+    // se sei in fullscreen, esci
+    document.exitFullscreen?.();
+  });
+
+  // --- semplice confetti (leggero) ---
+  let confettiPieces = [], confettiAnim;
+  function startConfetti(){
+    confettiPieces = [];
+    const colors = ['#ff4d4d','#ffd24d','#4dff88','#4dd0ff','#d84dff'];
+    for(let i=0;i<120;i++){
+      confettiPieces.push({
+        x: Math.random()*confettiCanvas.width,
+        y: -Math.random()*confettiCanvas.height,
+        size: 6 + Math.random()*8,
+        vx: -2 + Math.random()*4,
+        vy: 2 + Math.random()*4,
+        color: colors[Math.floor(Math.random()*colors.length)],
+        rot: Math.random()*360,
+        rotSpeed: -3 + Math.random()*6
+      });
+    }
+    cancelAnimationFrame(confettiAnim);
+    drawConfetti();
+  }
+
+  function drawConfetti(){
+    ctx.clearRect(0,0,confettiCanvas.width,confettiCanvas.height);
+    for(let p of confettiPieces){
+      p.x += p.vx; p.y += p.vy; p.rot += p.rotSpeed;
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot*Math.PI/180);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(-p.size/2, -p.size/2, p.size, p.size);
+      ctx.restore();
+      if(p.y > confettiCanvas.height + 50){
+        p.y = -20; p.x = Math.random()*confettiCanvas.width;
+      }
+    }
+    confettiAnim = requestAnimationFrame(drawConfetti);
+  }
+
+  function stopConfetti(){
+    cancelAnimationFrame(confettiAnim);
+    ctx && ctx.clearRect(0,0,confettiCanvas.width,confettiCanvas.height);
+  }
+
+  // fallback: se immagine non trovata, mostra immagine generica
+  img.onerror = function(){
+    img.src = 'https://via.placeholder.com/800x400.png?text=La+foto+non+%C3%A8+disponibile';
+  };
+</script>
+</body>
+</html>
